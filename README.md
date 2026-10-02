@@ -1,10 +1,18 @@
+<div align="center">
+
 # 📚 Paper2WeChat
 
-**从论文链接到微信公众号草稿，一站完成。** Paper2WeChat 将论文分析、中文故事化写作、论文配图校验、公众号排版和可选草稿推送整合为一个同时适用于 Claude Code 与 Codex 的 Agent Skill。
+### 从论文链接到微信公众号草稿，一站完成
+
+**一份 Agent Skill，同时适配 Claude Code 与 Codex**
+
+论文分析 · 中文故事化写作 · 论文配图校验 · 公众号排版 · 按需创建草稿
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue.svg)]
 
 [简体中文](#简体中文) · [English](#english)
+
+</div>
 
 ## 简体中文
 
@@ -145,7 +153,17 @@ paper2wechat/
 
 ## English
 
-**From a paper URL to a WeChat draft in one workflow.** Paper2WeChat combines paper analysis, evidence-grounded Chinese storytelling, paper-figure validation, WeChat formatting, and optional draft creation in one Agent Skill for Claude Code and Codex.
+<div align="center">
+
+### From a paper URL to a WeChat draft in one workflow
+
+**One Agent Skill for Claude Code and Codex**
+
+Paper analysis · Chinese storytelling · Paper-figure validation · WeChat formatting · Draft creation on request
+
+</div>
+
+Paper2WeChat combines paper analysis, evidence-grounded Chinese storytelling, paper-figure validation, WeChat formatting, and optional draft creation in one workflow.
 
 Give the workflow an arXiv link, paper URL, or PDF. The root [`SKILL.md`](SKILL.md) guides source reading and article writing, then produces a WeChat-ready preview. A draft is created only when you explicitly request it.
 
