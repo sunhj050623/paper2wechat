@@ -1,0 +1,14 @@
+{
+  "output_dir": "outputs",
+  "vault_root": "",
+  "wechat": {
+    "app_id": "",
+    "app_secret": "",
+    "author": "Tau Lab",
+    "album_id": ""
+  },
+  "smart_format": {
+    "api_key": "",
+    "base_url": ""
+  }
+}
