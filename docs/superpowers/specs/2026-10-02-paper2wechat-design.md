@@ -27,15 +27,19 @@
 
 保留现有 formatter 的主题选择和画廊、WeChat 内联样式 HTML、独立预览页、Markdown 图片与 Obsidian wikilink 图片处理、结构/语义标记支持、LaTeX 图片渲染辅助、中文标点修复、输出格式选项、主题配置和相关模板。包含当前全部主题文件，不仅限于默认主题，确保合并不缩减现有可选能力。
 
+现有格式器 CLI 能力清单：输入文件、主题、Vault 根目录、输出目录、不自动打开、主题画廊、推荐主题、wechat/html/plain 三类输出、AI 语义增强和正文字号。标点脚本保留 check/write 两种模式。LaTeX 转图片脚本、主题配置检查（若存在）和所有主题布局能力纳入盘点；现存 85 个主题 JSON 与两个 HTML 模板逐一核对。
+
 ### 草稿推送能力
 
 保留微信公众号草稿 API 工作流、正文图片上传、封面上传、标题/作者/来源链接、合集参数、dry-run/确认选项、公式发布门、错误诊断和可选调试输出。推送默认只创建草稿，不能直接发布到公众号。
 
+现有发布器 CLI 能力清单：已排版目录或 Markdown 输入、封面、标题、主题、作者、来源链接、dry-run、保存调试 HTML、显式允许公式、非交互确认和合集 ID。dry-run 按现有语义允许排版与图片上传但禁止创建草稿，因此测试时仍须提醒图片上传可能写入公众号素材库。
+
 ## 仓库与配置结构
 
-仓库名和单一 skill 名称均为 `paper2wechat`。顶层 `SKILL.md` 描述唯一工作流；`scripts/` 收纳论文分析、格式化、标点检查、校验、封面与发布辅助脚本；`themes/` 和 `templates/` 保留完整现有素材；`styles/` 保留论文叙事风格定义；`config.example.json` 展示配置格式；`outputs/` 仅用于本地生成文件且在 Git 中忽略；README 提供安装、依赖、配置、使用和安全说明。
+仓库名和单一 skill 名称均为 `paper2wechat`。顶层 `SKILL.md` 描述唯一工作流；`scripts/` 收纳论文分析、格式化、标点检查、校验、封面与发布辅助脚本；`themes/` 和 `templates/` 保留完整现有素材；`styles/` 保留论文叙事风格定义；根目录 `config.example.json` 展示配置格式；用户将其复制为同目录下的 `config.json` 进行本地配置；`outputs/` 仅用于本地生成文件且在 Git 中忽略；README 提供安装、依赖、配置、使用和安全说明。
 
-代码通过仓库相对路径定位主题、模板和辅助脚本，不依赖 `C:\Users\...`、`~/.codex/skills/...`、Claude 或特定个人目录。提供单个本地 `config.json` 配置入口，并在 `.gitignore` 中忽略该文件、API 密钥、临时文件、Python cache、输出文章和调试材料。公众号与 LLM 凭据不写入仓库，不在日志中输出 access token 或 secret。第一次安装不会要求配置微信账号；只做分析和排版时可不配置凭据。
+代码通过仓库相对路径定位主题、模板和辅助脚本，不依赖 `C:\Users\...`、`~/.codex/skills/...`、Claude 或特定个人目录。提供单个本地 `config.json` 配置入口，并在 `.gitignore` 中忽略该文件、API 密钥、临时文件、Python cache、输出文章和调试材料。若同时存在本地配置值与环境变量，敏感字段以环境变量优先（`WECHAT_APP_ID`、`WECHAT_APP_SECRET`、智能排版 API key）；非敏感选项以本地配置优先，再使用默认值。公众号与 LLM 凭据不写入仓库，不在日志、错误消息、dry-run 或调试输出中回显 access token、AppSecret 或 API key。第一次安装不会要求配置微信账号；只做分析和排版时可不配置凭据。
 
 ## 命名与品牌
 
