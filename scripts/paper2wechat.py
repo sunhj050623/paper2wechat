@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts.paths import REPO_ROOT
+from scripts.paths import REPO_ROOT, resolve_output_path
 
 
 @dataclass
@@ -37,10 +37,10 @@ class PipelineResult:
     publish_result: str = None
 
 
-def _run(command, runner):
+def _run(command, runner, cwd=None):
     result = runner(
         command,
-        cwd=str(REPO_ROOT),
+        cwd=str(cwd or Path.cwd()),
         capture_output=True,
         text=True,
         encoding="utf-8",
@@ -55,6 +55,7 @@ def _run(command, runner):
 def run_pipeline(source, options=None, runner=subprocess.run):
     """Validate a drafted Markdown article, format it, then optionally publish."""
     options = options or PipelineOptions()
+    working_directory = Path.cwd().resolve()
     markdown_path = Path(source).resolve()
     if not markdown_path.is_file():
         raise FileNotFoundError("文章 Markdown 不存在: {}".format(markdown_path))
@@ -65,16 +66,16 @@ def run_pipeline(source, options=None, runner=subprocess.run):
         [sys.executable, str(REPO_ROOT / "scripts" / "zh_punctuation_fix.py"),
          str(markdown_path), "--write"],
         runner,
+        cwd=working_directory,
     )
     _run(
         [sys.executable, str(REPO_ROOT / "scripts" / "validate_storytelling.py"),
          str(markdown_path)],
         runner,
+        cwd=working_directory,
     )
 
-    output_dir = Path(options.output_dir)
-    if not output_dir.is_absolute():
-        output_dir = (REPO_ROOT / output_dir).resolve()
+    output_dir = resolve_output_path(options.output_dir, working_directory)
     format_command = [
         sys.executable, str(REPO_ROOT / "scripts" / "format.py"),
         "--input", str(markdown_path),
@@ -85,7 +86,7 @@ def run_pipeline(source, options=None, runner=subprocess.run):
     ]
     if options.no_open:
         format_command.append("--no-open")
-    _run(format_command, runner)
+    _run(format_command, runner, cwd=working_directory)
 
     article_dir = output_dir / paper_slug
     article_html_path = article_dir / "article.html"
@@ -96,6 +97,7 @@ def run_pipeline(source, options=None, runner=subprocess.run):
         [sys.executable, str(REPO_ROOT / "scripts" / "validate_storytelling.py"),
          str(markdown_path), "--html", str(article_html_path)],
         runner,
+        cwd=working_directory,
     )
 
     publish_result = None
@@ -115,7 +117,7 @@ def run_pipeline(source, options=None, runner=subprocess.run):
             command.append("--dry-run")
         else:
             command.append("--yes")
-        result = _run(command, runner)
+        result = _run(command, runner, cwd=working_directory)
         publish_result = result.stdout.strip()
 
     return PipelineResult(

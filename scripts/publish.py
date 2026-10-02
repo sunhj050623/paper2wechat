@@ -32,7 +32,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import requests
 from scripts.config import load_config, redact
-from scripts.paths import REPO_ROOT
+from scripts.paths import REPO_ROOT, resolve_output_path
 
 # ── 路径 ──────────────────────────────────────────────────────────────
 SCRIPT_DIR = Path(__file__).parent
@@ -494,9 +494,7 @@ def main():
         print(result.stdout)
 
         # 从 format.py 输出中找到目录
-        output_base = Path(CONFIG["output_dir"])
-        if not output_base.is_absolute():
-            output_base = REPO_ROOT / output_base
+        output_base = resolve_output_path(CONFIG["output_dir"])
         file_stem = re.sub(r"-(公众号|小红书|微博)$", "", input_path.stem)
         article_dir = output_base / file_stem
     else:

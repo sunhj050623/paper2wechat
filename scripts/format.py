@@ -27,7 +27,7 @@ from typing import Tuple, List
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.config import load_config
-from scripts.paths import REPO_ROOT, local_config_path
+from scripts.paths import REPO_ROOT, local_config_path, resolve_output_path
 
 import markdown
 
@@ -123,10 +123,8 @@ TEMPLATE_DIR = SKILL_DIR / "templates"
 
 CONFIG = load_config()
 
-OUTPUT_DIR = Path(CONFIG["output_dir"])
-if not OUTPUT_DIR.is_absolute():
-    OUTPUT_DIR = REPO_ROOT / OUTPUT_DIR
-VAULT_ROOT = Path(CONFIG.get("vault_root") or REPO_ROOT)
+OUTPUT_DIR = resolve_output_path(CONFIG["output_dir"])
+VAULT_ROOT = resolve_output_path(CONFIG.get("vault_root") or ".")
 DEFAULT_THEME = CONFIG.get("settings", {}).get("default_theme", "bytedance")
 AUTO_OPEN = CONFIG.get("settings", {}).get("auto_open_browser", True)
 # 卡片/时间线/hero 布局标题区的作者署名，可在 config.json 的

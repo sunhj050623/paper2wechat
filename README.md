@@ -1,6 +1,6 @@
 # 📚 Paper2WeChat
 
-**从论文链接到微信公众号草稿，一站完成。** Paper2WeChat 将论文分析、中文故事化写作、论文配图校验、公众号排版和可选草稿推送整合为一个 Codex Skill。
+**从论文链接到微信公众号草稿，一站完成。** Paper2WeChat 将论文分析、中文故事化写作、论文配图校验、公众号排版和可选草稿推送整合为一个同时适用于 Claude Code 与 Codex 的 Agent Skill。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue.svg)]
 
@@ -22,27 +22,39 @@
 
 ### ⚡ 快速开始
 
-#### 安装为 Codex Skill
+#### 安装一份 Claude Code 与 Codex 共用的 Skill
 
-将仓库克隆到 Codex 的 skills 目录，然后刷新或重启 Codex：
+只克隆一份仓库到 Codex 与 Agent Skills 共用目录，再让 Claude Code 的 skills 目录通过链接指向同一份仓库。更新时只需在共用目录执行一次 `git pull`。
 
 **Windows PowerShell**
 
 ```powershell
-git clone https://github.com/sunhj050623/paper2wechat.git "$env:USERPROFILE/.codex/skills/paper2wechat"
+$agentSkills = Join-Path $HOME ".agents/skills"
+$claudeSkills = Join-Path $HOME ".claude/skills"
+$skill = Join-Path $agentSkills "paper2wechat"
+New-Item -ItemType Directory -Force $agentSkills, $claudeSkills | Out-Null
+git clone https://github.com/sunhj050623/paper2wechat.git $skill
+New-Item -ItemType Junction -Path (Join-Path $claudeSkills "paper2wechat") -Target $skill
 ```
 
 **macOS / Linux**
 
 ```bash
-git clone https://github.com/sunhj050623/paper2wechat.git "$HOME/.codex/skills/paper2wechat"
+git clone https://github.com/sunhj050623/paper2wechat.git "$HOME/.agents/skills/paper2wechat"
+mkdir -p "$HOME/.claude/skills"
+ln -s "$HOME/.agents/skills/paper2wechat" "$HOME/.claude/skills/paper2wechat"
 ```
+
+Codex 会从 `~/.agents/skills/` 发现 Skill；Claude Code 会从 `~/.claude/skills/` 发现它。两个入口指向同一份 `SKILL.md` 和脚本。安装后重启或刷新 Agent。要更新时，在 `$HOME/.agents/skills/paper2wechat` 执行 `git pull`。
 
 #### 安装脚本依赖
 
+```powershell
+python -m pip install -e "$HOME/.agents/skills/paper2wechat"
+```
+
 ```bash
-cd paper2wechat
-python -m pip install -e .
+python3 -m pip install -e "$HOME/.agents/skills/paper2wechat"
 ```
 
 Python 3.8 或更新版本均可。仅使用论文分析和排版时不需要配置微信公众号凭据。
@@ -56,37 +68,29 @@ Python 3.8 或更新版本均可。仅使用论文分析和排版时不需要配
 
 ### 🛠️ 命令行
 
-先由 Skill 工作流完成分析并保存 Markdown。假设文章位于 `outputs/paper-analyzer/<paper-slug>/<paper-slug>.md`：
+先由 Skill 工作流完成分析并保存 Markdown。假设文章位于当前项目的 `outputs/paper2wechat/<paper-slug>/<paper-slug>.md`。从任意工作目录调用脚本时，请使用 Skill 安装目录的完整路径；输出目录留在当前项目：
 
 **生成排版和预览**（不会推送）：
 
 ```bash
-python scripts/paper2wechat.py \
-  --input "outputs/paper-analyzer/<paper-slug>/<paper-slug>.md" \
-  --source-url "https://arxiv.org/abs/<paper-id>" \
-  --theme bytedance
+python "/path/to/paper2wechat/scripts/paper2wechat.py" --input "/path/to/project/outputs/paper2wechat/<paper-slug>/<paper-slug>.md" --output "/path/to/project/outputs/wechat-format" --source-url "https://arxiv.org/abs/<paper-id>" --theme bytedance
 ```
 
 **按需比较主题**（85 款主题均可通过 `--theme` 选择，图库展示精选主题）：
 
 ```bash
-python scripts/format.py \
-  --input "outputs/paper-analyzer/<paper-slug>/<paper-slug>.md" \
-  --gallery --no-open
+python "/path/to/paper2wechat/scripts/format.py" --input "/path/to/project/outputs/paper2wechat/<paper-slug>/<paper-slug>.md" --output "/path/to/project/outputs/wechat-format" --gallery --no-open
 ```
 
 **明确创建公众号草稿：**
 
 ```bash
-python scripts/paper2wechat.py \
-  --input "outputs/paper-analyzer/<paper-slug>/<paper-slug>.md" \
-  --source-url "https://arxiv.org/abs/<paper-id>" \
-  --theme bytedance --push
+python "/path/to/paper2wechat/scripts/paper2wechat.py" --input "/path/to/project/outputs/paper2wechat/<paper-slug>/<paper-slug>.md" --output "/path/to/project/outputs/wechat-format" --source-url "https://arxiv.org/abs/<paper-id>" --theme bytedance --push
 ```
 
 `--push` 会将素材上传并创建草稿；`--dry-run` 会验证发布链路并可能上传素材，但不会创建草稿。封面默认取当前论文图片清单中的图片，也可用 `--cover` 指定。推送前请确认标题、作者、来源链接和封面。
 
-其他选项可运行 `python scripts/paper2wechat.py --help`、`python scripts/format.py --help` 或 `python scripts/publish.py --help` 查看。格式器保留 `--format {wechat,html,plain}`、`--smart`、`--font-size`、`--recommend` 等选项。
+其他选项可运行 `python "/path/to/paper2wechat/scripts/paper2wechat.py" --help`、`python "/path/to/paper2wechat/scripts/format.py" --help` 或 `python "/path/to/paper2wechat/scripts/publish.py" --help` 查看。格式器保留 `--format {wechat,html,plain}`、`--smart`、`--font-size`、`--recommend` 等选项。
 
 ### 🔐 配置
 
@@ -96,6 +100,14 @@ python scripts/paper2wechat.py \
 $env:WECHAT_APP_ID = "your-app-id"
 $env:WECHAT_APP_SECRET = "your-app-secret"
 $env:SMART_FORMAT_API_KEY = "your-api-key"  # 仅在请求 --smart 时需要
+```
+
+macOS / Linux:
+
+```bash
+export WECHAT_APP_ID="your-app-id"
+export WECHAT_APP_SECRET="your-app-secret"
+export SMART_FORMAT_API_KEY="your-api-key"  # Only needed for --smart
 ```
 
 也支持 `SMART_API_KEY`、`OPENAI_API_KEY` 和 `AI_API_KEY`。环境变量优先于本地配置。公众号凭据只在上传图片或创建草稿时需要。
@@ -133,7 +145,7 @@ paper2wechat/
 
 ## English
 
-**From a paper URL to a WeChat draft in one workflow.** Paper2WeChat combines paper analysis, evidence-grounded Chinese storytelling, paper-figure validation, WeChat formatting, and optional draft creation in a single Codex Skill.
+**From a paper URL to a WeChat draft in one workflow.** Paper2WeChat combines paper analysis, evidence-grounded Chinese storytelling, paper-figure validation, WeChat formatting, and optional draft creation in one Agent Skill for Claude Code and Codex.
 
 Give the workflow an arXiv link, paper URL, or PDF. The root [`SKILL.md`](SKILL.md) guides source reading and article writing, then produces a WeChat-ready preview. A draft is created only when you explicitly request it.
 
@@ -149,27 +161,39 @@ Give the workflow an arXiv link, paper URL, or PDF. The root [`SKILL.md`](SKILL.
 
 ### ⚡ Quick start
 
-#### Install as a Codex Skill
+#### Install one Skill shared by Claude Code and Codex
 
-Clone the repository into your Codex skills directory, then refresh or restart Codex:
+Clone one copy into the shared Agent Skills directory used by Codex, then link Claude Code's skill directory to that same checkout. Updates only require one `git pull`.
 
 **Windows PowerShell**
 
 ```powershell
-git clone https://github.com/sunhj050623/paper2wechat.git "$env:USERPROFILE/.codex/skills/paper2wechat"
+$agentSkills = Join-Path $HOME ".agents/skills"
+$claudeSkills = Join-Path $HOME ".claude/skills"
+$skill = Join-Path $agentSkills "paper2wechat"
+New-Item -ItemType Directory -Force $agentSkills, $claudeSkills | Out-Null
+git clone https://github.com/sunhj050623/paper2wechat.git $skill
+New-Item -ItemType Junction -Path (Join-Path $claudeSkills "paper2wechat") -Target $skill
 ```
 
 **macOS / Linux**
 
 ```bash
-git clone https://github.com/sunhj050623/paper2wechat.git "$HOME/.codex/skills/paper2wechat"
+git clone https://github.com/sunhj050623/paper2wechat.git "$HOME/.agents/skills/paper2wechat"
+mkdir -p "$HOME/.claude/skills"
+ln -s "$HOME/.agents/skills/paper2wechat" "$HOME/.claude/skills/paper2wechat"
 ```
+
+Codex discovers skills from `~/.agents/skills/`; Claude Code discovers them from `~/.claude/skills/`. Both entries point to the same `SKILL.md` and scripts. Restart or refresh the agents after installation. To update, run `git pull` once in `$HOME/.agents/skills/paper2wechat`.
 
 #### Install script dependencies
 
+```powershell
+python -m pip install -e "$HOME/.agents/skills/paper2wechat"
+```
+
 ```bash
-cd paper2wechat
-python -m pip install -e .
+python3 -m pip install -e "$HOME/.agents/skills/paper2wechat"
 ```
 
 Python 3.8 or newer is supported. WeChat credentials are not needed for paper analysis or formatting.
@@ -183,37 +207,29 @@ Python 3.8 or newer is supported. WeChat credentials are not needed for paper an
 
 ### 🛠️ Command line
 
-First use the Skill workflow to analyze the paper and save a Markdown article. The examples below assume it is saved at `outputs/paper-analyzer/<paper-slug>/<paper-slug>.md`.
+First use the Skill workflow to analyze the paper and save a Markdown article. The examples below assume it is saved under the current project at `outputs/paper2wechat/<paper-slug>/<paper-slug>.md`. Use the installed Skill's absolute script path and keep outputs in the current project.
 
 **Format and preview** (does not publish):
 
 ```bash
-python scripts/paper2wechat.py \
-  --input "outputs/paper-analyzer/<paper-slug>/<paper-slug>.md" \
-  --source-url "https://arxiv.org/abs/<paper-id>" \
-  --theme bytedance
+python "/path/to/paper2wechat/scripts/paper2wechat.py" --input "/path/to/project/outputs/paper2wechat/<paper-slug>/<paper-slug>.md" --output "/path/to/project/outputs/wechat-format" --source-url "https://arxiv.org/abs/<paper-id>" --theme bytedance
 ```
 
 **Compare themes** (all 85 themes are available through `--theme`; the gallery shows a curated selection):
 
 ```bash
-python scripts/format.py \
-  --input "outputs/paper-analyzer/<paper-slug>/<paper-slug>.md" \
-  --gallery --no-open
+python "/path/to/paper2wechat/scripts/format.py" --input "/path/to/project/outputs/paper2wechat/<paper-slug>/<paper-slug>.md" --output "/path/to/project/outputs/wechat-format" --gallery --no-open
 ```
 
 **Explicitly create a WeChat draft:**
 
 ```bash
-python scripts/paper2wechat.py \
-  --input "outputs/paper-analyzer/<paper-slug>/<paper-slug>.md" \
-  --source-url "https://arxiv.org/abs/<paper-id>" \
-  --theme bytedance --push
+python "/path/to/paper2wechat/scripts/paper2wechat.py" --input "/path/to/project/outputs/paper2wechat/<paper-slug>/<paper-slug>.md" --output "/path/to/project/outputs/wechat-format" --source-url "https://arxiv.org/abs/<paper-id>" --theme bytedance --push
 ```
 
 `--push` uploads media and creates a draft. `--dry-run` validates the publishing flow and may upload media, but does not create a draft. The cover defaults to an image in the current paper's manifest; use `--cover` to select one explicitly. Review the title, author, source URL, and cover before publishing.
 
-Run `python scripts/paper2wechat.py --help`, `python scripts/format.py --help`, or `python scripts/publish.py --help` for all options. The formatter also retains options such as `--format {wechat,html,plain}`, `--smart`, `--font-size`, and `--recommend`.
+Run `python "/path/to/paper2wechat/scripts/paper2wechat.py" --help`, `python "/path/to/paper2wechat/scripts/format.py" --help`, or `python "/path/to/paper2wechat/scripts/publish.py" --help` for all options. The formatter also retains options such as `--format {wechat,html,plain}`, `--smart`, `--font-size`, and `--recommend`.
 
 ### 🔐 Configuration
 
@@ -223,6 +239,14 @@ Copy `config.example.json` to `config.json` in the repository root, or supply se
 $env:WECHAT_APP_ID = "your-app-id"
 $env:WECHAT_APP_SECRET = "your-app-secret"
 $env:SMART_FORMAT_API_KEY = "your-api-key"  # Only needed when using --smart
+```
+
+macOS / Linux:
+
+```bash
+export WECHAT_APP_ID="your-app-id"
+export WECHAT_APP_SECRET="your-app-secret"
+export SMART_FORMAT_API_KEY="your-api-key"  # Only needed for --smart
 ```
 
 `SMART_API_KEY`, `OPENAI_API_KEY`, and `AI_API_KEY` are also supported. Environment variables take precedence over local configuration. WeChat credentials are only needed to upload media or create a draft.
@@ -244,7 +268,8 @@ python -m pytest -q
 
 ```text
 paper2wechat/
-├── SKILL.md          # Single Skill entry point and paper-analysis workflow
+├── SKILL.md          # One portable Claude Code + Codex Skill entry point
+├── references/       # Detailed paper analysis, formatting, and Obsidian guidance
 ├── scripts/          # Image validation, formatting, validation, pipeline, and publisher
 ├── themes/           # 85 JSON formatting themes
 ├── templates/        # Theme gallery and preview templates

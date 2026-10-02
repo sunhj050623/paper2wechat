@@ -101,3 +101,32 @@ def test_pipeline_calls_publisher_only_when_push_is_explicit(tmp_path):
     assert len(publish_calls) == 1
     assert "--yes" in publish_calls[0]
     assert result.publish_result == "draft created"
+
+
+def test_pipeline_default_output_uses_calling_workspace(tmp_path, monkeypatch):
+    article = tmp_path / "article.md"
+    article.write_text("# 文章\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    calls = []
+
+    def runner(command, **kwargs):
+        calls.append((command, kwargs))
+        if "format.py" in command[1]:
+            output = Path(command[command.index("--output") + 1])
+            article_dir = output / "article"
+            article_dir.mkdir(parents=True)
+            (article_dir / "article.html").write_text("<article></article>", encoding="utf-8")
+            (article_dir / "preview.html").write_text("<html></html>", encoding="utf-8")
+
+        class Result:
+            returncode = 0
+            stdout = ""
+            stderr = ""
+        return Result()
+
+    result = run_pipeline(article, runner=runner)
+
+    format_call = next(call for call in calls if "format.py" in call[0][1])
+    assert Path(format_call[0][format_call[0].index("--output") + 1]) == tmp_path / "outputs" / "wechat-format"
+    assert result.article_html_path == tmp_path / "outputs" / "wechat-format" / "article" / "article.html"
+    assert format_call[1]["cwd"] == str(tmp_path)

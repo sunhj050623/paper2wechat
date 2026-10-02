@@ -16,7 +16,16 @@ def resolve_repo_path(*parts: str) -> Path:
 
 
 def output_root() -> Path:
-    return resolve_repo_path("outputs")
+    """Resolve generated files from the caller's workspace, never the skill install."""
+    return resolve_output_path("outputs")
+
+
+def resolve_output_path(path, base_dir=None) -> Path:
+    """Resolve an output path against the caller's working directory by default."""
+    candidate = Path(path).expanduser()
+    if not candidate.is_absolute():
+        candidate = Path(base_dir or Path.cwd()) / candidate
+    return candidate.resolve()
 
 
 def local_config_path() -> Path:

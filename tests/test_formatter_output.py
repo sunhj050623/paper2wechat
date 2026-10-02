@@ -39,3 +39,25 @@ def test_local_markdown_generates_wechat_article_and_preview(tmp_path):
     assert (article_dir / "preview.html").is_file()
     assert (article_dir / "images" / "figure1.png").is_file()
     assert "<img" in (article_dir / "article.html").read_text(encoding="utf-8")
+
+
+def test_default_output_is_relative_to_calling_workspace(tmp_path):
+    source = tmp_path / "paper.md"
+    source.write_text("# 测试文章\n\n## 正文\n\n工作区输出路径测试。\n", encoding="utf-8")
+    env = dict(os.environ)
+    env["PYTHONIOENCODING"] = "utf-8"
+
+    result = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "format.py"), "--input", str(source), "--no-open"],
+        cwd=str(tmp_path),
+        env=env,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+
+    expected = tmp_path / "outputs" / "wechat-format" / "paper"
+    assert result.returncode == 0, result.stderr
+    assert (expected / "article.html").is_file()
+    assert (expected / "preview.html").is_file()
