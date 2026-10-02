@@ -1,6 +1,12 @@
 {
-  "output_dir": "outputs",
+  "output_dir": "outputs/wechat-format",
   "vault_root": "",
+  "image_search_paths": [],
+  "settings": {
+    "default_theme": "bytedance",
+    "auto_open_browser": true,
+    "header_author_label": ""
+  },
   "wechat": {
     "app_id": "",
     "app_secret": "",
@@ -10,5 +16,15 @@
   "smart_format": {
     "api_key": "",
     "base_url": ""
+  },
+  "smart_api": {
+    "api_key": "",
+    "base_url": "https://api.openai.com/v1",
+    "model": "gpt-4o-mini"
+  },
+  "ai": {
+    "api_key": "",
+    "url": "",
+    "model": ""
   }
 }

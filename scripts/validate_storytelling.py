@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Validate the default reader-facing paper-analyzer deliverable.
+"""Validate the default reader-facing Paper2WeChat deliverable.
 
 This is intentionally a small gate: it catches accidental code-analysis or
 unresolved image paths before the article reaches the formatter.
@@ -9,6 +9,7 @@ unresolved image paths before the article reaches the formatter.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -39,6 +40,66 @@ TITLE_FORBIDDEN = re.compile(
 )
 
 
+def validate_image_manifest(markdown_path: Path) -> list:
+    """Require exact, hash-verified image provenance for this article."""
+    markdown_path = Path(markdown_path).resolve()
+    article_dir = markdown_path.parent
+    manifest_path = article_dir / "work" / "images-manifest.json"
+    errors = []
+    if not manifest_path.is_file():
+        errors.append("图片来源清单不存在: work/images-manifest.json")
+        manifest = {"images": []}
+    else:
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (ValueError, OSError) as error:
+            return ["图片来源清单无法读取: {}".format(error)]
+
+    refs = IMAGE_RE.findall(markdown_path.read_text(encoding="utf-8"))
+    ref_paths = set()
+    image_root = (article_dir / "images").resolve()
+    for ref in refs:
+        parts = ref.split("/")
+        if len(parts) < 2 or parts[0] != "images" or any(
+            part in {"", ".", ".."} for part in parts[1:]
+        ):
+            errors.append("图片必须位于本论文 images/ 目录: {}".format(ref))
+            continue
+        path = (article_dir / ref).resolve()
+        try:
+            path.relative_to(image_root)
+        except ValueError:
+            errors.append("图片必须位于本论文 images/ 目录: {}".format(ref))
+            continue
+        if not path.is_file():
+            errors.append("图片不存在: {}".format(ref))
+            continue
+        ref_paths.add(ref)
+
+    manifest_paths = set()
+    for item in manifest.get("images", []):
+        image_ref = item.get("path", "")
+        if image_ref in manifest_paths:
+            errors.append("图片来源清单包含重复路径: {}".format(image_ref))
+            continue
+        manifest_paths.add(image_ref)
+        path = (article_dir / image_ref).resolve()
+        try:
+            path.relative_to(image_root)
+        except ValueError:
+            errors.append("图片来源清单包含论文目录外路径: {}".format(image_ref))
+            continue
+        if not path.is_file():
+            errors.append("图片来源清单中的文件不存在: {}".format(image_ref))
+        elif hashlib.sha256(path.read_bytes()).hexdigest() != item.get("sha256"):
+            errors.append("图片哈希与来源清单不一致: {}".format(image_ref))
+        if not item.get("source_url"):
+            errors.append("图片来源清单缺少来源 URL: {}".format(image_ref))
+    if manifest_path.is_file() and ref_paths != manifest_paths:
+        errors.append("正文图片引用与来源清单不一致")
+    return errors
+
+
 def validate(path: Path, allow_code: bool, allow_formulas: bool) -> dict:
     text = path.read_text(encoding="utf-8")
     errors: list[str] = []
@@ -47,11 +108,7 @@ def validate(path: Path, allow_code: bool, allow_formulas: bool) -> dict:
     refs = IMAGE_RE.findall(text)
     if len(refs) < 3:
         errors.append(f"至少需要 3 张论文图片，当前为 {len(refs)} 张")
-    for ref in refs:
-        if not ref.startswith("images/"):
-            errors.append(f"图片必须使用 images/ 相对路径: {ref}")
-        elif not (path.parent / ref).exists():
-            errors.append(f"图片不存在: {ref}")
+    errors.extend(validate_image_manifest(path))
 
     if not allow_code:
         for label, pattern in FORBIDDEN_DEFAULT.items():

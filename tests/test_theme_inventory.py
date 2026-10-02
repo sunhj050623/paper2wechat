@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+from scripts.format import load_theme
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -31,3 +33,4 @@ def test_every_theme_is_valid_json_and_matches_source_hashes():
         import hashlib
         actual_sha256 = hashlib.sha256(path.read_bytes()).hexdigest()
         assert actual_sha256 == expected_sha256, name
+        assert load_theme(path.stem), name

@@ -60,10 +60,19 @@ def embed_image(img_path: Path) -> str:
 
 def process_images(content: str, base_dir: Path) -> str:
     """处理 markdown 中的图片，转换为 base64"""
+    base_dir = Path(base_dir).resolve()
+    images_root = (base_dir / "images").resolve()
+
     def replace_img(match):
         alt, src = match.groups()
-        img_path = base_dir / src
-        if img_path.exists():
+        if not src.startswith("images/"):
+            return match.group(0)
+        img_path = (base_dir / src).resolve()
+        try:
+            img_path.relative_to(images_root)
+        except ValueError:
+            return match.group(0)
+        if img_path.is_file():
             b64 = embed_image(img_path)
             return f'![{alt}]({b64})'
         return match.group(0)
